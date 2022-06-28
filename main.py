@@ -177,10 +177,19 @@ class DGNNMDA:
         self.u_idx = tf.placeholder(tf.int32, name="u_idx")
         self.v_idx = tf.placeholder(tf.int32, name="v_idx")
         self.r = tf.placeholder(tf.float32, name="rating")
-        self.miRNA_embeddings = tf.Variable(
-            tf.random_normal(shape=[self.num_miRNAs, self.emb_size], stddev=0.005, seed=2), name='U')
-        self.drug_embeddings = tf.Variable(
-            tf.random_normal(shape=[self.num_drugs, self.emb_size], stddev=0.005, seed=3), name='V')
+
+        num = self.num_miRNAs + self.num_drugs
+        list_three = [[0 for i in range(num)] for j in range(num)]
+        for i in range(num):
+            list_three[i][i] = 1
+        from sklearn.decomposition import PCA
+        pca = PCA(n_components=32)
+        a = pca.fit_transform(list_three)
+        a = a.astype(np.float32)
+        a = tf.convert_to_tensor(a)
+        self.miRNA_embeddings = a[:self.num_miRNAs]
+        self.drug_embeddings = a[self.num_miRNAs:]
+
         self.u_embedding = tf.nn.embedding_lookup(self.miRNA_embeddings, self.u_idx)
         self.v_embedding = tf.nn.embedding_lookup(self.drug_embeddings, self.v_idx)
         config = tf.ConfigProto()
@@ -189,23 +198,13 @@ class DGNNMDA:
 
         S = self.buildSparseRelationMatrix()
         S2 = self.buildSparseRelationMatrix2()
-        A = self.buildSparseRatingMatrix()
-        B = self.buildSparseRatingMatrix2()
         C = self.buildSparseRatingMatrix()
         D = self.buildSparseRatingMatrix2()
-        E = self.buildSparseRatingMatrix()
-        F = self.buildSparseRatingMatrix2()
         indices = np.mat([S.row, S.col]).transpose()
         self.S = tf.SparseTensor(indices, S.data.astype(np.float32), S.shape)
 
         indices2 = np.mat([S2.row, S2.col]).transpose()
         self.S2 = tf.SparseTensor(indices2, S2.data.astype(np.float32), S2.shape)
-
-        indices3 = np.mat([A.row, A.col]).transpose()
-        self.A = tf.SparseTensor(indices3, A.data.astype(np.float32), A.shape)
-
-        indices4 = np.mat([B.row, B.col]).transpose()
-        self.B = tf.SparseTensor(indices4, B.data.astype(np.float32), B.shape)
 
         indices5 = np.mat([C.row, C.col]).transpose()
         self.C = tf.SparseTensor(indices5, C.data.astype(np.float32), C.shape)
@@ -213,22 +212,17 @@ class DGNNMDA:
         indices6 = np.mat([D.row, D.col]).transpose()
         self.D = tf.SparseTensor(indices6, D.data.astype(np.float32), D.shape)
 
-        indices7 = np.mat([E.row, E.col]).transpose()
-        self.E = tf.SparseTensor(indices7, E.data.astype(np.float32), E.shape)
-
-        indices8 = np.mat([F.row, F.col]).transpose()
-        self.F = tf.SparseTensor(indices8, F.data.astype(np.float32), F.shape)
 
     def buildModel(self):
         self.weights = {}
         self.weights2 = {}
         self.weights3 = {}
         self.weights4 = {}
-        self.weights5 = {}
-        self.weights6 = {}
+
         initializer = tf.contrib.layers.variance_scaling_initializer()
         initializer4 = tf.contrib.layers.variance_scaling_initializer()
         initializer2 = tf.contrib.layers.variance_scaling_initializer()
+        initializer3 = tf.contrib.layers.variance_scaling_initializer()
 
         miRNA_embeddings00 = self.miRNA_embeddings
         drug_embeddings00 = self.drug_embeddings
@@ -267,7 +261,7 @@ class DGNNMDA:
         miRNA_embeddings = tf.matmul(tf.concat([miRNA_embeddings, middleResult_1], 1), self.weights3['weights3%d' % k])
         final_miRNA_embeddings = tf.nn.leaky_relu(miRNA_embeddings)
 
-        self.weights4['weights4%d' % k] = tf.Variable(initializer2([2 * self.emb_size, self.emb_size]),
+        self.weights4['weights4%d' % k] = tf.Variable(initializer3([2 * self.emb_size, self.emb_size]),
                                                       name='weights4%d' % k)
         middleResult_2 = 0.5 * tf.sparse_tensor_dense_matmul(self.D, (
                 miRNA_embeddings + tf.multiply((tf.sparse_tensor_dense_matmul(self.C, drug_embeddings)),
@@ -307,8 +301,8 @@ class DGNNMDA:
 if __name__ == '__main__':
     config1 = Config('DGNNMDA.conf')
     i = 2
-    train_path = f"./dataset/train_{i}.txt"
-    test_path = f"./dataset/test_{i}.txt"
+    train_path = f"./dataset/train.txt"
+    test_path = f"./dataset/test.txt"
     train = FileIO.loadDataSet(config1, train_path)
     test = FileIO.loadDataSet(config1, test_path, bTest=True)
     rela = FileIO.loadRelationship(config1, config1['relation'])

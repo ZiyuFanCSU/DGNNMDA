@@ -20,10 +20,7 @@ class FileIO(object):
             drugs = split(delim,line.strip())
             miRNAId = drugs[int(order[0])]
             drugId = drugs[int(order[1])]
-            if len(order)<3:
-                rating = 1
-            else:
-                rating = drugs[int(order[2])]
+            rating = 1
             if bTest:
                 testData.append([miRNAId, drugId, float(rating)])
             else:
