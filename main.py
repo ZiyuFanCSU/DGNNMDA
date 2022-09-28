@@ -37,6 +37,14 @@ class DGNNMDA:
         args2 = config.LineConfig(self.config['DGNNMDA2'])
         self.n_layers2 = int(args2['-n_layer'])
 
+    def random_dic(self,dicts):
+        dict_key_ls = list(dicts.keys())
+        random.shuffle(dict_key_ls)
+        new_dict = {}
+        for key in dict_key_ls:
+            new_dict[key] = dicts.get(key)
+        return new_dict
+
     def dataClean(self):
         cleanList = []
         cleanPair = []
@@ -111,11 +119,31 @@ class DGNNMDA:
 
     def buildSparseRelationMatrix(self):
         row, col, entries = [], [], []
-        for pair in self.relation:
-            row += [self.data.miRNA[pair[0]]]
-            col += [self.data.miRNA[pair[1]]]
-            entries += [1.0 / len(self.followees[pair[0]])]
-        AdjacencyMatrix = coo_matrix((entries, (row, col)), shape=(self.num_miRNAs, self.num_miRNAs), dtype=np.float32)
+        dict1 = self.social.followees
+
+        for i in dict1.keys():
+            dict1[i] = random_dic(self,dict1[i])
+        print(dict1)
+
+        for i in dict1.values():
+            if len(i.values()) > 10:
+                for j in range(len(i.values()) - 10):
+                    i.popitem()
+        print(dict1)
+        l1 = []
+        for i in dict1.keys():
+            for j in dict1[i].keys():
+                l2 = []
+                l2.append(i)
+                l2.append(j)
+                l2.append(1)
+                l1.append(l2)
+
+        for pair in l1:
+            row += [self.data.user[pair[0]]]
+            col += [self.data.user[pair[1]]]
+            entries += [1.0 / len(dict1[pair[0]])]
+        AdjacencyMatrix = coo_matrix((entries, (row, col)), shape=(self.num_users, self.num_users), dtype=np.float32)
         return AdjacencyMatrix
 
     def buildSparseRelationMatrix2(self):
@@ -145,13 +173,31 @@ class DGNNMDA:
                     dic.setdefault(str(j), {})[i] = 1
             else:
                 dic.setdefault(str(j), {})
-        for pair in L:
-            if pair[0] in self.data.drug.keys():
-                if pair[1] in self.data.drug.keys():
-                    row += [self.data.drug[pair[0]]]
-                    col += [self.data.drug[pair[1]]]
-                    entries += [1.0 / len(dic[pair[0]])]
-        AdjacencyMatrix = coo_matrix((entries, (row, col)), shape=(self.num_drugs, self.num_drugs), dtype=np.float32)
+        dict1 = dic
+
+        for i in dict1.keys():
+            dict1[i] = random_dic(self,dict1[i])
+        print(dict1)
+
+        for i in dict1.values():
+            if len(i.values()) > 10:
+                for j in range(len(i.values()) - 10):
+                    i.popitem()
+        print(dict1)
+        l1 = []
+        for i in dict1.keys():
+            for j in dict1[i].keys():
+                l2 = []
+                l2.append(i)
+                l2.append(j)
+                l2.append(1)
+                l1.append(l2)
+
+        for pair in l1:
+            row += [self.data.user[pair[0]]]
+            col += [self.data.user[pair[1]]]
+            entries += [1.0 / len(dict1[pair[0]])]
+        AdjacencyMatrix = coo_matrix((entries, (row, col)), shape=(self.num_users, self.num_users), dtype=np.float32)
         return AdjacencyMatrix
 
     def buildSparseRatingMatrix(self):
@@ -197,14 +243,22 @@ class DGNNMDA:
         self.sess = tf.Session(config=config)
 
         S = self.buildSparseRelationMatrix()
+        S1 = self.buildSparseRelationMatrix()
         S2 = self.buildSparseRelationMatrix2()
+        S3 = self.buildSparseRelationMatrix2()
         C = self.buildSparseRatingMatrix()
         D = self.buildSparseRatingMatrix2()
         indices = np.mat([S.row, S.col]).transpose()
         self.S = tf.SparseTensor(indices, S.data.astype(np.float32), S.shape)
 
-        indices2 = np.mat([S2.row, S2.col]).transpose()
-        self.S2 = tf.SparseTensor(indices2, S2.data.astype(np.float32), S2.shape)
+        indices2 = np.mat([S1.row, S1.col]).transpose()
+        self.S1 = tf.SparseTensor(indices2, S1.data.astype(np.float32), S1.shape)
+
+        indices3 = np.mat([S2.row, S2.col]).transpose()
+        self.S2 = tf.SparseTensor(indices3, S2.data.astype(np.float32), S2.shape)
+
+        indices4 = np.mat([S3.row, S3.col]).transpose()
+        self.S3 = tf.SparseTensor(indices4, S3.data.astype(np.float32), S3.shape)
 
         indices5 = np.mat([C.row, C.col]).transpose()
         self.C = tf.SparseTensor(indices5, C.data.astype(np.float32), C.shape)
@@ -233,11 +287,16 @@ class DGNNMDA:
                 initializer([2 * self.emb_size, self.emb_size]), name='weights%d' % k)
 
         miRNA_embeddings = miRNA_embeddings00
-        for k in range(self.n_layers):
-            new_miRNA_embeddings = tf.sparse_tensor_dense_matmul(self.S, miRNA_embeddings)
-            miRNA_embeddings = tf.matmul(tf.concat([new_miRNA_embeddings, miRNA_embeddings], 1),
-                                         self.weights['weights%d' % k])
-            miRNA_embeddings = tf.nn.leaky_relu(miRNA_embeddings)
+
+        new_miRNA_embeddings = tf.sparse_tensor_dense_matmul(self.S, miRNA_embeddings)
+        miRNA_embeddings = tf.matmul(tf.concat([new_miRNA_embeddings, miRNA_embeddings], 1),
+                                     self.weights['weights%d' % 0])
+        miRNA_embeddings = tf.nn.leaky_relu(miRNA_embeddings)
+
+        new_miRNA_embeddings = tf.sparse_tensor_dense_matmul(self.S1, miRNA_embeddings)
+        miRNA_embeddings = tf.matmul(tf.concat([new_miRNA_embeddings, miRNA_embeddings], 1),
+                                     self.weights['weights%d' % 1])
+        miRNA_embeddings = tf.nn.leaky_relu(miRNA_embeddings)
 
         # drug的GraphSage
         for k in range(self.n_layers2):
@@ -245,11 +304,16 @@ class DGNNMDA:
                 initializer4([2 * self.emb_size, self.emb_size]), name='weights2%d' % k)
 
         drug_embeddings = drug_embeddings00
-        for k in range(self.n_layers2):
-            new_drug_embeddings = tf.sparse_tensor_dense_matmul(self.S2, drug_embeddings)
-            drug_embeddings = tf.matmul(tf.concat([new_drug_embeddings, drug_embeddings], 1),
-                                        self.weights2['weights2%d' % k])
-            drug_embeddings = tf.nn.leaky_relu(drug_embeddings)
+
+        new_drug_embeddings = tf.sparse_tensor_dense_matmul(self.S3, drug_embeddings)
+        drug_embeddings = tf.matmul(tf.concat([new_drug_embeddings, drug_embeddings], 1),
+                                    self.weights2['weights2%d' % 0])
+        drug_embeddings = tf.nn.leaky_relu(drug_embeddings)
+
+        new_drug_embeddings = tf.sparse_tensor_dense_matmul(self.S4, drug_embeddings)
+        drug_embeddings = tf.matmul(tf.concat([new_drug_embeddings, drug_embeddings], 1),
+                                    self.weights2['weights2%d' % 1])
+        drug_embeddings = tf.nn.leaky_relu(drug_embeddings)
 
         # 
         k = 0
