@@ -1,6 +1,6 @@
 id	miRNAname	
 0	miR-3173	
-1	miR-30b	
+1	miR-30b*	
 2	miR-200a	
 3	miR-3164	
 4	miR-371	
@@ -58,7 +58,7 @@ id	miRNAname
 56	miR-1275	
 57	miR-760	
 58	miR-320a	
-59	miR-130a	
+59	miR-130a-5p	
 60	hs-303-b	
 61	miR-1294	
 62	miR-483	
@@ -67,7 +67,7 @@ id	miRNAname
 65	miR-637	
 66	miR-125b	
 67	miR-374	
-68	miR-185	
+68	miR-185*	
 69	miR-2964a	
 70	miR-132	
 71	miR-1229	
@@ -147,7 +147,7 @@ id	miRNAname
 145	miR-93*	
 146	miR-1287	
 147	miR-34b-3p	
-148	miR-148b	
+148	miR-148b*	
 149	miR-218-5p	
 150	miR-29b-1*	
 151	miR-33b	
@@ -200,10 +200,10 @@ id	miRNAname
 198	miR-4763	
 199	miR-30e	
 200	miR-138	
-201	miR-335	
+201	miR-335*	
 202	miR-708-3p	
 203	miR-29a	
-204	miR-16	
+204	miR-16-1	
 205	let-7i	
 206	miR-105	
 207	miR-3676	
@@ -236,7 +236,7 @@ id	miRNAname
 234	miR-576	
 235	miR-1258	
 236	miR-185-5p	
-237	miR-9	
+237	miR-9*	
 238	miR-181b-5p	
 239	miR-703	
 240	miR-103-2*	
@@ -260,8 +260,8 @@ id	miRNAname
 258	miR-664	
 259	miR-4271	
 260	miR-135b*	
-261	miR-181c	
-262	miR-25	
+261	miR-181c-5p	
+262	miR-25*	
 263	miR-1273c	
 264	miR-128	
 265	miR-3162	
@@ -372,7 +372,7 @@ id	miRNAname
 370	miR-770-5p	
 371	miR-3605	
 372	miR-137	
-373	let-7g	
+373	let-7g*	
 374	miR-1915	
 375	miR-508	
 376	miR-218-1*	
