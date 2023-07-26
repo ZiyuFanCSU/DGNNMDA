@@ -1387,7 +1387,7 @@ Sorafenib	miR-30b*
 Cisplatin	miR-126*	
 Taxol	miR-663a	
 Hydrogen Peroxide	miR-500a	
-Interferon	miR-27a	
+Doxorubicin miR-27a	
 Sirolimus	miR-184	
 Daunorubicin	miR-325	
 Epirubicin	miR-193a-5p	
