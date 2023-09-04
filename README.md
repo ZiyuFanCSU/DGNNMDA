@@ -11,5 +11,5 @@ By calculating the similarity between miRNA-miRNA, drug-drug, we constructed the
 version of GNN model for information transfer between the homogeneous nodes and heterogeneous nodes, respectively, to obtain high-quality embedded expression.
 # Usage
 * 1.Configure the xx.conf file in the directory named config. (xx is the name of the model)
-* 2.Run main.py.
-
+* 2.Dividding the dataset into train and test sets, and placed in the corresponding 'train.txt' and 'test.txt' positions in the code. Common methods include 5-fold cross-validation, etc. You have access to sklearn.model_selection.KFold.
+* 3.Run main.py.
